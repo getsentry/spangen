@@ -138,7 +138,7 @@ struct Trace {
 impl Trace {
     pub fn new(organization_id: u64) -> Self {
         Self {
-            trace_id: TraceId::new(),
+            trace_id: TraceId::default(),
             organization_id,
         }
     }
@@ -168,7 +168,7 @@ impl Segment {
     pub fn create_span(&mut self) -> Span {
         let info = SpanInfo {
             trace_id: self.trace_id,
-            span_id: SpanId::new(),
+            span_id: SpanId::default(),
             // TODO: implement nesting
             parent_span_id: self.root_span_id,
             // TODO: implement remote spans

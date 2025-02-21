@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 #[serde(try_from = "String", into = "String")]
 pub struct SpanId([u8; 8]);
 
-impl SpanId {
-    pub fn new() -> Self {
+impl Default for SpanId {
+    fn default() -> Self {
         Self(rand::random())
     }
 }
@@ -48,8 +48,8 @@ impl TryFrom<String> for SpanId {
 #[serde(try_from = "String", into = "String")]
 pub struct TraceId([u8; 16]);
 
-impl TraceId {
-    pub fn new() -> Self {
+impl Default for TraceId {
+    fn default() -> Self {
         Self(rand::random())
     }
 }
