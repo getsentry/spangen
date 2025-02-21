@@ -1,0 +1,22 @@
+on:
+  push:
+    branches:
+      - master
+
+  pull_request:
+
+env:
+  RUSTFLAGS: -D warnings
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        run: rustup toolchain install stable --profile minimal --component clippy --no-self-update
+
+      - name: Run Clippy
+        run: cargo clippy --no-deps -- -D warnings
