@@ -32,9 +32,7 @@ jobs:
     name: Docker
     runs-on: ubuntu-latest
 
-    # TODO: Enable this condition the PR is ready
-    # if: ${{ (github.ref_name == 'master') }}
-    needs: lint
+    if: ${{ (github.ref_name == 'master') }}
 
     env:
       DOCKER_IMAGE: ghcr.io/getsentry/spangen
