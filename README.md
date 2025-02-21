@@ -45,14 +45,16 @@ Options:
 
 ## Docker
 
-There is a docker container that runs `spangen` and produces its output to a configurable Kafka topic.
-
-```sh
-docker build -t spangen .
-docker run --rm -it spangen --count 10
-```
-
-Use environment variables to configure the connection:
+We provide a docker image that bundles `spangen` with `kafkacat` to produce the
+generated output to a configurable Kafka topic. The image is available at
+`ghcr.io/getsentry/spangen`. The following environment variables configure the
+connection:
 
 - `KAFKA_BROKER`: The host and port of the broker. Defaults to `kafka-001:9092`.
 - `KAFKA_TOPIC`: The name of the topic to produce to. Defaults to `snuba-spans`.
+
+Example:
+
+```sh
+docker run --rm -it -e KAFKA_BROKER=127.0.0.1:9092 ghcr.io/getsentry/spangen --count 10
+```
