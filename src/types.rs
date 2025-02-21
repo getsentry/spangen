@@ -1,3 +1,7 @@
+//! Vendored tracing types.
+//!
+//! These types come from Relay or the Sentry Rust SDK.
+
 use std::{fmt, str};
 
 use serde::{Deserialize, Serialize};

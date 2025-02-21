@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.96"
 argh = "0.1.13"
 fake = { version = "4.0.0", features = ["time"] }
 hex = "0.4.3"
