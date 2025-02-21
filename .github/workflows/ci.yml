@@ -27,3 +27,24 @@ jobs:
 
       - name: Run Clippy
         run: cargo clippy --no-deps -- -D warnings
+
+  docker:
+    name: Docker
+    runs-on: ubuntu-latest
+
+    # TODO: Enable this condition the PR is ready
+    # if: ${{ (github.ref_name == 'master') }}
+    needs: lint
+
+    env:
+      DOCKER_IMAGE: ghcr.io/getsentry/spangen
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate with GHCR
+        run: docker login ghcr.io -u '${{ github.actor }}' -p '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: Build and Push Docker Image
+        run: docker build --push --tag $DOCKER_IMAGE:latest .
