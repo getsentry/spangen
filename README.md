@@ -43,6 +43,16 @@ Options:
   --help, help      display usage information
 ```
 
+## Local Tests
+
+To use spangen locally, use `cargo` to build and run the binary in release mode.
+To produce to Kafka, install [kcat](https://github.com/edenhill/kcat) and pipe
+the output of spangen there:
+
+```sh
+cargo run --release -- --count 10 | kcat -P -b 127.0.0.1:9092 -t topic_name
+```
+
 ## Docker
 
 We provide a docker image that bundles `spangen` with `kafkacat` to produce the
