@@ -14,5 +14,6 @@ COPY docker-entrypoint.sh /usr/local/bin/
 
 ENV KAFKA_BROKER=kafka-001:9092
 ENV KAFKA_TOPIC=snuba-spans
+ENV RUST_LOG=info
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
