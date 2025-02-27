@@ -1,4 +1,5 @@
 use std::io::{StdoutLock, Write};
+use std::time::Instant;
 
 use anyhow::Result;
 use rand::Rng;
@@ -39,6 +40,7 @@ impl StdoutProducer {
 }
 
 fn produce(config: &Config) -> Result<()> {
+    let start = Instant::now();
     let mut generator = RandomGenerator::new(config);
     let mut producer = StdoutProducer::new();
 
@@ -66,6 +68,12 @@ fn produce(config: &Config) -> Result<()> {
             }
         }
     }
+
+    log::info!(
+        "Produced {} spans in {:?}",
+        producer.count(),
+        start.elapsed()
+    );
 
     Ok(())
 }
