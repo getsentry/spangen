@@ -57,12 +57,11 @@ impl<'a> RandomGenerator<'a> {
     }
 
     pub fn organization_id(&mut self) -> u64 {
-        self.rng.random_range(1..self.config.number_of_orgs + 1)
+        self.rng.random_range(1..self.config.orgs + 1)
     }
 
     pub fn project_id(&mut self, organization_id: u64) -> u64 {
-        self.rng.random_range(1..self.config.number_of_projects + 1)
-            + organization_id * MAX_PROJECTS
+        self.rng.random_range(1..self.config.projects + 1) + (organization_id - 1) * MAX_PROJECTS
     }
 
     pub fn segment_count(&mut self) -> usize {

@@ -70,31 +70,31 @@ pub struct Config {
 
     /// the number of organizations.
     #[argh(option, default = "1000")]
-    pub number_of_orgs: u64,
+    pub orgs: u64,
 
     /// the number of projects per organization.
     #[argh(option, default = "10")]
-    pub number_of_projects: u64,
+    pub projects: u64,
 }
 
 impl Config {
     pub fn validate(&mut self) -> Result<()> {
-        if self.number_of_orgs == 0 {
+        if self.orgs == 0 {
             log::error!("invalid number of orgs, using default value of 1");
-            self.number_of_orgs = 1;
+            self.orgs = 1;
         }
 
-        if self.number_of_projects == 0 {
+        if self.projects == 0 {
             log::error!("invalid number of projects, using default value of 1");
-            self.number_of_projects = 1;
+            self.projects = 1;
         }
 
-        if self.number_of_projects >= MAX_PROJECTS {
+        if self.projects >= MAX_PROJECTS {
             log::error!(
                 "number of projects too high, using maximum value of {}",
                 MAX_PROJECTS - 1
             );
-            self.number_of_projects = MAX_PROJECTS - 1;
+            self.projects = MAX_PROJECTS - 1;
         }
 
         if self.tree_depth == 0 {
