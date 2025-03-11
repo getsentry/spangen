@@ -15,27 +15,19 @@ mod types;
 
 struct StdoutProducer {
     stdout: StdoutLock<'static>,
-    count: usize,
 }
 
 impl StdoutProducer {
     pub fn new() -> Self {
         Self {
             stdout: std::io::stdout().lock(),
-            count: 0,
         }
     }
 
     pub fn produce_json<T: Serialize>(&mut self, value: &T) -> Result<()> {
         serde_json::to_writer(&mut self.stdout, value)?;
         writeln!(&mut self.stdout)?;
-
-        self.count += 1;
         Ok(())
-    }
-
-    pub fn count(&self) -> usize {
-        self.count
     }
 }
 
@@ -44,7 +36,7 @@ fn produce(config: &Config) -> Result<()> {
     let mut generator = RandomGenerator::new(config);
     let mut producer = StdoutProducer::new();
 
-    while producer.count() < config.count {
+    while generator.stats().spans < config.count {
         let trace = generator.trace();
         let mut remote_parent = None;
 
@@ -69,11 +61,11 @@ fn produce(config: &Config) -> Result<()> {
         }
     }
 
-    log::info!(
-        "Produced {} spans in {:?}",
-        producer.count(),
-        start.elapsed()
-    );
+    let stats = generator.stats();
+    log::info!("Finished in {:?}", start.elapsed());
+    log::info!("  traces:   {}", stats.traces);
+    log::info!("  segments: {}", stats.segments);
+    log::info!("  spans:    {}", stats.spans);
 
     Ok(())
 }
