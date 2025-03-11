@@ -14,6 +14,13 @@ use time::OffsetDateTime;
 use crate::cli::{Config, MAX_PROJECTS};
 use crate::types::{SpanId, TraceId};
 
+#[derive(Clone, Debug, Default)]
+pub struct Stats {
+    pub spans: usize,
+    pub segments: usize,
+    pub traces: usize,
+}
+
 pub struct RandomGenerator<'a> {
     config: &'a Config,
     rng: ThreadRng,
@@ -21,6 +28,7 @@ pub struct RandomGenerator<'a> {
     span_dist: Normal<f64>,
     #[allow(dead_code, reason = "TODO: support custom receive time")]
     batch_delay_dist: Normal<f64>,
+    stats: Stats,
 }
 
 impl<'a> RandomGenerator<'a> {
@@ -49,7 +57,12 @@ impl<'a> RandomGenerator<'a> {
             segment_dist,
             span_dist,
             batch_delay_dist,
+            stats: Stats::default(),
         }
+    }
+
+    pub fn stats(&self) -> &Stats {
+        &self.stats
     }
 
     pub fn rng(&mut self) -> &mut ThreadRng {
@@ -73,10 +86,12 @@ impl<'a> RandomGenerator<'a> {
     }
 
     pub fn trace(&mut self) -> TraceInfo {
+        self.stats.traces += 1;
         TraceInfo::new(self.organization_id())
     }
 
     pub fn segment<'b>(&mut self, trace: &'b TraceInfo) -> SegmentInfo<'b> {
+        self.stats.segments += 1;
         SegmentInfo::new(trace, self.project_id(trace.organization_id))
     }
 
@@ -115,6 +130,8 @@ impl<'a> RandomGenerator<'a> {
     }
 
     pub fn span<'b>(&mut self, segment: &'b SegmentInfo<'b>, span_ref: SpanRef) -> Span {
+        self.stats.spans += 1;
+
         let now = OffsetDateTime::now_utc();
         let lower = now - Duration::from_secs(60 * 60);
 
