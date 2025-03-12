@@ -7,8 +7,16 @@ pub const MAX_PROJECTS: u64 = 1000;
 #[derive(Debug, FromArgs)]
 pub struct Config {
     /// the number of spans to generate in total.
+    ///
+    /// spangen will stop generating new traces after this number has been reached, but it will
+    /// finish started traces and segments. The actual number of spans generated may therefore be
+    /// higher than this option.
     #[argh(option)]
     pub count: usize,
+
+    /// the throughput of spans per second (defaults to no throttling).
+    #[argh(option)]
+    pub throughput: Option<u32>,
 
     /// the average number of spans per segment (randomized).
     #[argh(option, default = "17")]

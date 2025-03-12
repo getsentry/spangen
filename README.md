@@ -6,7 +6,13 @@ A load generator for spans in traces that adheres to the `snuba-spans` schema.
 
 ```
 Options:
-  --count           the number of spans to generate in total.
+  --count           the number of spans to generate in total. spangen will stop
+                    generating new traces after this number has been reached,
+                    but it will finish started traces and segments. The actual
+                    number of spans generated may therefore be higher than this
+                    option.
+  --throughput      the throughput of spans per second (defaults to no
+                    throttling).
   --spans-per-segment
                     the average number of spans per segment (randomized).
   --spans-per-segment-stddev
@@ -37,9 +43,8 @@ Options:
   --segments-without-root
                     the percentage of segments without an explicit root span
                     (0..100)
-  --number-of-orgs  the number of organizations.
-  --number-of-projects
-                    the number of projects per organization.
+  --orgs            the number of organizations.
+  --projects        the number of projects per organization.
   --help, help      display usage information
 ```
 
