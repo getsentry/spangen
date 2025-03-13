@@ -67,6 +67,8 @@ connection:
 
 - `KAFKA_BROKER`: The host and port of the broker. Defaults to `kafka-001:9092`.
 - `KAFKA_TOPIC`: The name of the topic to produce to. Defaults to `snuba-spans`.
+- `KAFKA_PARTITION`: An optional partition number to produce to. Defaults to
+  random partitioning.
 
 Example:
 
