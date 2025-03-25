@@ -98,7 +98,7 @@ impl<'a> RandomGenerator<'a> {
     /// Builds a randomized span tree with defined number of spans and depth.
     ///
     /// The tree is returned serialized in post-order: children first and then their parents.
-    pub fn span_refs(&mut self) -> Vec<SpanRef> {
+    pub fn span_refs(&mut self, segment: &SegmentInfo<'_>) -> Vec<SpanRef> {
         let len = self.span_count();
         let depth = self.config.tree_depth;
 
@@ -107,7 +107,7 @@ impl<'a> RandomGenerator<'a> {
 
         levels.push(0);
         spans.push(SpanRef {
-            span_id: SpanId::default(),
+            span_id: segment.span_id,
             parent_id: None,
         });
 
@@ -143,6 +143,7 @@ impl<'a> RandomGenerator<'a> {
             trace_id: segment.trace.trace_id,
             span_id: span_ref.span_id,
             parent_span_id: span_ref.parent_id,
+            segment_id: Some(segment.span_id),
             is_remote: false,
             organization_id: segment.trace.organization_id,
             project_id: segment.project_id,
@@ -178,11 +179,16 @@ impl TraceInfo {
 pub struct SegmentInfo<'a> {
     pub trace: &'a TraceInfo,
     pub project_id: u64,
+    pub span_id: SpanId,
 }
 
 impl<'a> SegmentInfo<'a> {
     pub fn new(trace: &'a TraceInfo, project_id: u64) -> Self {
-        Self { trace, project_id }
+        Self {
+            trace,
+            project_id,
+            span_id: SpanId::default(),
+        }
     }
 }
 
@@ -199,6 +205,7 @@ pub struct Span {
     pub trace_id: TraceId,
     pub span_id: SpanId,
     pub parent_span_id: Option<SpanId>,
+    pub segment_id: Option<SpanId>,
     pub is_remote: bool,
     pub organization_id: u64,
     pub project_id: u64,
