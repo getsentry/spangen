@@ -85,13 +85,14 @@ fn produce(config: &Config) -> Result<()> {
 
         for _ in 0..generator.segment_count() {
             let segment = generator.segment(&trace);
-            let span_refs = generator.span_refs();
+            let span_refs = generator.span_refs(&segment);
 
             throttle.wait();
 
             for span_ref in &span_refs {
                 let mut span = generator.span(&segment, *span_ref);
                 if span_ref.parent_id.is_none() {
+                    debug_assert!(span_ref.span_id == segment.span_id);
                     span.parent_span_id = remote_parent;
                     span.is_remote = remote_parent.is_some();
                 }
