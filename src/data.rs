@@ -1,17 +1,23 @@
-use std::collections::BTreeMap;
+use std::net::Ipv4Addr;
 use std::time::Duration;
 
+use fake::Fake;
 use fake::faker::filesystem::en::DirPath;
+use fake::faker::internet::en::{FreeEmail, IPv4};
 use fake::faker::lorem::en::Sentence;
 use fake::faker::time::en::DateTimeBetween;
-use fake::{Fake, Faker};
 use rand::Rng;
 use rand::rngs::ThreadRng;
+use rand::seq::IndexedRandom;
 use rand_distr::{Distribution, Normal};
 use serde::Serialize;
 use time::OffsetDateTime;
 
 use crate::cli::{Config, MAX_PROJECTS};
+use crate::constants::{
+    BROWSER_NAMES, HTTP_METHODS, ROOT_OPS, SENTRY_ENVIRONMENTS, SENTRY_PLATFORMS, SENTRY_RELEASES,
+    SENTRY_SDKS, SENTRY_TRANSACTIONS, SPAN_OPS, THREAD_NAMES,
+};
 use crate::types::{SpanId, TraceId};
 
 #[derive(Clone, Debug, Default)]
@@ -90,9 +96,42 @@ impl<'a> RandomGenerator<'a> {
         TraceInfo::new(self.organization_id())
     }
 
+    pub fn sentry_tags(&mut self) -> SentryTags {
+        let user_id = self.rng.random_range(1..100_000);
+        let user_email: String = FreeEmail().fake();
+
+        SentryTags {
+            release: SENTRY_RELEASES.choose(self.rng()).unwrap(),
+            user: user_id,
+            user_id,
+            user_ip: IPv4().fake(),
+            user_username: user_email.clone(),
+            user_email,
+            environment: SENTRY_ENVIRONMENTS.choose(self.rng()).unwrap(),
+            op: SPAN_OPS.choose(self.rng()).unwrap(),
+            transaction: SENTRY_TRANSACTIONS.choose(self.rng()).unwrap(),
+            transaction_method: HTTP_METHODS.choose(self.rng()).unwrap(),
+            transaction_op: ROOT_OPS.choose(self.rng()).unwrap(),
+            browser_name: BROWSER_NAMES.choose(self.rng()).unwrap(),
+            sdk_name: SENTRY_SDKS.choose(self.rng()).unwrap(),
+            sdk_version: (
+                self.rng.random_range(0..3),
+                self.rng.random_range(0..10),
+                self.rng.random_range(0..10),
+            ),
+            platform: SENTRY_PLATFORMS.choose(self.rng()).unwrap(),
+            thread_id: self.rng.random(),
+            thread_name: THREAD_NAMES.choose(self.rng()).unwrap(),
+        }
+    }
+
     pub fn segment<'b>(&mut self, trace: &'b TraceInfo) -> SegmentInfo<'b> {
         self.stats.segments += 1;
-        SegmentInfo::new(trace, self.project_id(trace.organization_id))
+        SegmentInfo::new(
+            trace,
+            self.project_id(trace.organization_id),
+            self.sentry_tags(),
+        )
     }
 
     /// Builds a randomized span tree with defined number of spans and depth.
@@ -129,7 +168,7 @@ impl<'a> RandomGenerator<'a> {
         spans
     }
 
-    pub fn span<'b>(&mut self, segment: &'b SegmentInfo<'b>, span_ref: SpanRef) -> Span {
+    pub fn span<'s>(&mut self, segment: &'s SegmentInfo<'_>, span_ref: SpanRef) -> Span<'s> {
         self.stats.spans += 1;
 
         let now = OffsetDateTime::now_utc();
@@ -150,7 +189,7 @@ impl<'a> RandomGenerator<'a> {
 
             description: Sentence(3..6).fake(),
             origin: DirPath().fake(),
-            data: Faker.fake(),
+            sentry_tags: &segment.sentry_tags,
             received: to_float(now),
             start_timestamp_precise: to_float(start_timestamp),
             end_timestamp_precise: to_float(end_timestamp),
@@ -180,14 +219,16 @@ pub struct SegmentInfo<'a> {
     pub trace: &'a TraceInfo,
     pub project_id: u64,
     pub span_id: SpanId,
+    pub sentry_tags: SentryTags,
 }
 
 impl<'a> SegmentInfo<'a> {
-    pub fn new(trace: &'a TraceInfo, project_id: u64) -> Self {
+    pub fn new(trace: &'a TraceInfo, project_id: u64, sentry_tags: SentryTags) -> Self {
         Self {
             trace,
             project_id,
             span_id: SpanId::default(),
+            sentry_tags,
         }
     }
 }
@@ -199,9 +240,53 @@ pub struct SpanRef {
     pub parent_id: Option<SpanId>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct SentryTags {
+    pub release: &'static str,
+    #[serde(serialize_with = "serialize_user")]
+    pub user: u32,
+    #[serde(rename = "user.id")]
+    pub user_id: u32,
+    #[serde(rename = "user.ip")]
+    pub user_ip: Ipv4Addr,
+    #[serde(rename = "user.username")]
+    pub user_username: String,
+    #[serde(rename = "user.email")]
+    pub user_email: String,
+    pub environment: &'static str,
+    pub op: &'static str,
+    pub transaction: &'static str,
+    #[serde(rename = "transaction.method")]
+    pub transaction_method: &'static str,
+    #[serde(rename = "transaction.op")]
+    pub transaction_op: &'static str,
+    #[serde(rename = "browser.name")]
+    pub browser_name: &'static str,
+    #[serde(rename = "sdk.name")]
+    pub sdk_name: &'static str,
+    #[serde(rename = "sdk.version", serialize_with = "serialize_version")]
+    pub sdk_version: (u8, u8, u8),
+    pub platform: &'static str,
+    #[serde(rename = "thread.id")]
+    pub thread_id: u32,
+    #[serde(rename = "thread.name")]
+    pub thread_name: &'static str,
+}
+
+fn serialize_user<S: serde::Serializer>(user: &u32, serializer: S) -> Result<S::Ok, S::Error> {
+    serializer.collect_str(&format_args!("id:{user}"))
+}
+
+fn serialize_version<S: serde::Serializer>(
+    &(major, minor, patch): &(u8, u8, u8),
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    serializer.collect_str(&format_args!("{}.{}.{}", major, minor, patch))
+}
+
 /// A complete span populated with fake data.
 #[derive(Debug, Serialize)]
-pub struct Span {
+pub struct Span<'a> {
     pub trace_id: TraceId,
     pub span_id: SpanId,
     pub parent_span_id: Option<SpanId>,
@@ -211,7 +296,7 @@ pub struct Span {
     pub project_id: u64,
     pub description: String,
     pub origin: String,
-    pub data: BTreeMap<String, String>,
+    pub sentry_tags: &'a SentryTags,
     pub received: f64,
     pub start_timestamp_precise: f64,
     pub end_timestamp_precise: f64,
