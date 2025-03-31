@@ -11,6 +11,7 @@ use crate::cli::Config;
 use crate::data::RandomGenerator;
 
 mod cli;
+mod constants;
 mod data;
 mod types;
 
