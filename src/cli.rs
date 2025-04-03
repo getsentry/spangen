@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use anyhow::Result;
 use argh::FromArgs;
 
@@ -33,6 +35,10 @@ pub struct Config {
     /// the standard deviation for randomizing the number of segments per trace.
     #[argh(option, default = "1.0")]
     pub segments_per_trace_stddev: f64,
+
+    /// the order in which spans are written in a segment.
+    #[argh(option, default = "SpanOrder::Post")]
+    pub order: SpanOrder,
 
     /// the maximum number of spans that will be generated in a single run.
     ///
@@ -115,5 +121,29 @@ impl Config {
         }
 
         Ok(())
+    }
+}
+
+/// The order in which spans are written in a segment.
+#[derive(Clone, Copy, Debug)]
+pub enum SpanOrder {
+    /// Parents are written after their children.
+    Post,
+    /// Parents are written before their children.
+    Pre,
+    /// Spans are written in a random order.
+    Random,
+}
+
+impl FromStr for SpanOrder {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s.to_lowercase().as_str() {
+            "post" => Ok(SpanOrder::Post),
+            "pre" => Ok(SpanOrder::Pre),
+            "random" => Ok(SpanOrder::Random),
+            _ => anyhow::bail!("invalid span order: {}", s),
+        }
     }
 }

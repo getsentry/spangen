@@ -8,12 +8,12 @@ use fake::faker::lorem::en::Sentence;
 use fake::faker::time::en::DateTimeBetween;
 use rand::Rng;
 use rand::rngs::ThreadRng;
-use rand::seq::IndexedRandom;
+use rand::seq::{IndexedRandom, SliceRandom};
 use rand_distr::{Distribution, Normal};
 use serde::Serialize;
 use time::OffsetDateTime;
 
-use crate::cli::{Config, MAX_PROJECTS};
+use crate::cli::{Config, MAX_PROJECTS, SpanOrder};
 use crate::constants::{
     BROWSER_NAMES, HTTP_METHODS, ROOT_OPS, SENTRY_ENVIRONMENTS, SENTRY_PLATFORMS, SENTRY_RELEASES,
     SENTRY_SDKS, SENTRY_TRANSACTIONS, SPAN_OPS, THREAD_NAMES,
@@ -164,7 +164,12 @@ impl<'a> RandomGenerator<'a> {
             });
         }
 
-        spans.reverse();
+        match self.config.order {
+            SpanOrder::Post => spans.reverse(),
+            SpanOrder::Pre => (),
+            SpanOrder::Random => spans.shuffle(&mut self.rng),
+        }
+
         spans
     }
 
