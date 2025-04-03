@@ -23,6 +23,7 @@ Options:
   --segments-per-trace-stddev
                     the standard deviation for randomizing the number of
                     segments per trace.
+  --order           the order in which spans are written in a segment.
   --batch-size      the maximum number of spans that will be generated in a
                     single run. This is used to simulate a stream of spans that
                     are generated in batches. SDKs do not typically generate
